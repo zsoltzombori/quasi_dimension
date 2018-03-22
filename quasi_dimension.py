@@ -54,14 +54,14 @@ if False:
 
 
 # check qd on mnist
-if False:
+if True:
     (X_train, y_train), (X_test, y_test) = mnist.load_data()
     X_train = X_train.astype('float32')
     X_train /= 255
 
     X_train = np.reshape(X_train, [X_train.shape[0], -1])
     for size in (10, 50, 100, 200, 500, 1000, 2000, 5000):
-        A = X_train[:size]
+        A = X_train[1000:1000+size]
         qd = quasi_dimension(A)
         print "Size: {}, qd: {}".format(size, qd)
 
@@ -75,7 +75,7 @@ if False:
 # Size: 5000, qd: (22.197434518+1.45175061492e-06j)
 
 # check qd on fashion_mnist
-if True:
+if False:
     (X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
     X_train = X_train.astype('float32')
     X_train /= 255
