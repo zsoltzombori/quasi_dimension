@@ -45,7 +45,6 @@ def plotImages(data, n_x, n_y, name):
         x = idx % n_x
         y = idx / n_x
         sample = data[idx]
-        print sample
         image_data[height_inc*y:height_inc*y+height, width_inc*x:width_inc*x+width] = 255*sample.clip(0, 0.99999)
     img = Image.fromarray(image_data,mode=mode)
     fileName = name + ".png"

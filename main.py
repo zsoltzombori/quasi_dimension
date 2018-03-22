@@ -10,7 +10,7 @@ import data
 import vis
 
 DATASET="mnist"
-TRAINSIZE=5000
+TRAINSIZE=40000
 SEED=None
 BN_DO=None  # "BN" (batchnorm), "DO" (dropout), None
 BATCH_SIZE=100
@@ -133,30 +133,28 @@ print "NETWORK PARAMETER COUNT", np.sum([np.prod(v.shape) for v in tf.trainable_
 session.run(tf.global_variables_initializer())
 session.run(tf.local_variables_initializer())
 
-def quasi_dimension(A):
-    K = np.matmul(A, A.transpose())
-    K_prime= K / np.trace(K)
-    log_K_prime = logm(K_prime, disp=False)[0]
-#    log_K_prime = np.real(log_K_prime)
-    entropy = np.trace(- np.matmul(K_prime, log_K_prime))
-    qd = np.exp(entropy)
-    qd = np.real(qd)
+def quasi_dimension(A, calc_eigs=True):
+    A = A - np.mean(A, axis=0, keepdims=True)
+    K = np.matmul(A.transpose(),A)
+    T = np.trace(K)
+    K_prime= K / T
+    if calc_eigs:
+        eigvals = np.linalg.eigvalsh(K_prime)
+        eigvals = np.clip(eigvals, 1e-10, np.inf)
+        eigvals = eigvals
+        qd = np.prod(1 / eigvals ** eigvals)
+    else:
+        log_K_prime = logm(K_prime, disp=False)[0]
+        entropy = np.trace(- np.matmul(K_prime, log_K_prime))
+        qd = np.exp(entropy)
+        qd = np.real(qd)
     qd = np.around(qd, decimals=2)
     return qd
 
-def quasi_dimension2(A):
-    K = np.matmul(A, A.transpose())
-    T = np.trace(K)
-    eigvals = np.linalg.eigvalsh(K)
-    eigvals = eigvals / T
-    qd = 1.0
-    for eigval in eigvals:
-        qd *= 1 / (eigval ** eigval)
-    return qd
-
-digit = 5
-heldout_xs = X_train[y_train==digit]
-heldout_xs = heldout_xs[:BATCH_SIZE]
+#digit = 5
+#heldout_xs = X_train[y_train==digit]
+#heldout_xs = heldout_xs[:BATCH_SIZE]
+heldout_xs = X_train[:BATCH_SIZE]
 def get_qds(X_batch):
     X_batch_flattened = np.reshape(X_batch, (X_batch.shape[0], -1))
     qds = [quasi_dimension(X_batch_flattened)]
@@ -216,7 +214,8 @@ for iteration in xrange(ITERS+1):
         else:
             print("{}:\t train loss {},\t dev loss {}").format(iteration, _total_loss, eval_loss)
             # X = X_devel[:BATCH_SIZE]
-            X = X_train[:BATCH_SIZE]
+            # X = X_train[:BATCH_SIZE]
+            X = heldout_xs
             (pred,) = session.run([output], feed_dict={inputs:X})
             vis.plotImages(vis.mergeSets((X, pred)), 10, BATCH_SIZE // 20, "recons_{}".format(iteration))
 

@@ -67,9 +67,9 @@ def classifier_generator((xs, ys), batch_size, infinity=True, augment=False):
         datagen.fit(xs)
     else:
         datagen = ImageDataGenerator(
-            featurewise_center=True,
+            featurewise_center=False,
             samplewise_center=False,
-            featurewise_std_normalization=True,
+            featurewise_std_normalization=False,
             samplewise_std_normalization=False,
             zca_whitening=False,
             rotation_range=0,
