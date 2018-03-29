@@ -25,6 +25,7 @@ def DenseAE(inputs, depth, width, latent_dim):
         input_count *= int(input_shape[i])
     activations = []
     output = tf.reshape(inputs, (inputs.shape[0], -1))
+    activations.append(output)
     for i in range(depth):
         output = tf.layers.dense(output, width, name="encoder_{}".format(i))
         output = tf.layers.batch_normalization(output)
@@ -48,34 +49,37 @@ def DenseAE(inputs, depth, width, latent_dim):
     output = tf.reshape(output, input_shape)
     return output, activations
 
-# def ConvAE(inputs, depth, width, latent_dim):
-#     # todo
-#     input_shape = inputs.shape
-#     input_count = 1
-#     for i in range(1, len(input_shape)):
-#         input_count *= int(input_shape[i])
-#     activations = []
-#     output = tf.reshape(inputs, (inputs.shape[0], -1))
-#     for i in range(depth):
-#         output = tf.layers.dense(output, width, name="encoder_{}".format(i))
-#         output = tf.layers.batch_normalization(output)
-#         output = tf.nn.relu(output)
-#         activations.append(output)
+def ConvAE(inputs, depth, width, latent_dim):
+    kernel = (3,3)
+    input_shape = inputs.shape
+    output = inputs
+    activations = []
+    for i in range(depth):
+        output = tf.layers.conv2d(output, width, kernel, padding="same", name="encoder_{}".format(i))
+        output = tf.layers.batch_normalization(output)
+        output = tf.nn.relu(output)
+        activations.append(tf.contrib.layers.flatten(output))
+    pre_latent_shape = output.shape
+    pre_latent_count = 1
+    for i in range(1, len(pre_latent_shape)):
+        pre_latent_count *= int(pre_latent_shape[i])
 
-#     latent = tf.layers.dense(output, latent_dim, name="latent")
-#     latent = tf.nn.relu(latent)
-#     activations.append(latent)
+    output = tf.contrib.layers.flatten(output)
+    latent = tf.layers.dense(output, latent_dim, name="latent")
+    latent = tf.nn.relu(latent)
+    activations.append(latent)
 
-#     output = latent
-#     for i in range(depth):
-#         output = tf.layers.dense(output, width, name="decoder_{}".format(i))
-#         # output = tf.layers.batch_normalization(output)
-#         output = tf.nn.relu(output)
-#         activations.append(output)
+    post_latent = tf.layers.dense(latent, pre_latent_count, name="post_latent")
+    post_latent = tf.nn.relu(post_latent)
+    output = tf.reshape(post_latent, pre_latent_shape)
 
-#     output = tf.layers.dense(output, input_count, name="output")
-#     # output = tf.nn.relu(output)
-#     activations.append(output)
-#     output = tf.reshape(output, input_shape)
-#     return output, activations
+    for i in range(depth):
+        output = tf.layers.conv2d(output, width, kernel, padding="same", name="decoder_{}".format(i))
+        output = tf.nn.relu(output)
+        activations.append(tf.contrib.layers.flatten(output))
+
+    output = tf.layers.conv2d(output, input_shape[3], kernel, padding="same", name="output")
+    # output = tf.nn.relu(output)
+    activations.append(tf.contrib.layers.flatten(output))
+    return output, activations
 

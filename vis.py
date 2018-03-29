@@ -27,7 +27,7 @@ def latentScatter(encoder, x_test, batch_size, name):
     plt.close()
 
 
-def plotImages(data, n_x, n_y, name):
+def plotImages(data, n_x, n_y, names):
     (height, width, channel) = data.shape[1:]
     height_inc = height + 1
     width_inc = width + 1
@@ -47,9 +47,12 @@ def plotImages(data, n_x, n_y, name):
         sample = data[idx]
         image_data[height_inc*y:height_inc*y+height, width_inc*x:width_inc*x+width] = 255*sample.clip(0, 0.99999)
     img = Image.fromarray(image_data,mode=mode)
-    fileName = name + ".png"
-    print "Creating file " + fileName
-    img.save(fileName)
+    if not isinstance(names, (list, tuple)):
+        names = (names,)
+    for name in names:
+        fileName = name + ".png"
+        print "Creating file " + fileName
+        img.save(fileName)
 
 # display a 2D manifold of the images
 # TODO Only works for spherical distributions.
