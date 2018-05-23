@@ -10,10 +10,10 @@ import data
 import vis
 
 DATASET="mnist"
-TRAINSIZE=10000
+TRAINSIZE=1000
 SEED=None
 BN_DO=None  # "BN" (batchnorm), "DO" (dropout), None
-BATCH_SIZE=100
+BATCH_SIZE=200
 DEPTH=4
 WIDTH=100
 OUTPUT_COUNT = 10
@@ -24,8 +24,9 @@ FREQUENCY=1000
 AUGMENTATION=False
 SESSION_NAME="tmp_{}".format(time.strftime('%Y%m%d-%H%M%S'))
 COV_WEIGHT = 0
+QR_WEIGHT = 0
 LATENT_DIM=10
-CLASSIFIER=False
+CLASSIFIER=True
 HELDOUT_SIZE = 500
 AE_TYPE= "conv" # dense, conv
 LOG_DIR = "logs/%s" % SESSION_NAME
@@ -116,6 +117,23 @@ if COV_WEIGHT > 0: # push the off diagonal elements of the featurewise correlati
     total_loss += cov_loss
     loss_list.append(('cov_loss', cov_loss))
 
+def quasi_randomness_tf(A):
+    assert len(A.shape) == 2
+    k, n = A.shape
+    k = int(k)
+    n = int(n)
+    K = tf.matmul(A, tf.transpose(A))
+    qr = ((k*n) ** 2) * tf.reduce_sum(tf.square(K)) - (tf.reduce_sum(A) ** 4)
+    return qr / ((k*n) ** 4)
+
+if QR_WEIGHT > 0:
+    qr_loss = tf.constant(0.0)
+    for act in activations:
+        act_centered = act - tf.reduce_mean(act, axis=0)
+        qr_loss += quasi_randomness_tf(act_centered)
+    total_loss += QR_WEIGHT * qr_loss
+    loss_list.append(('qr_loss', qr_loss))
+
 
 # TODO other losses
 
@@ -141,6 +159,13 @@ print "NETWORK PARAMETER COUNT", np.sum([np.prod(v.shape) for v in tf.trainable_
 session.run(tf.global_variables_initializer())
 session.run(tf.local_variables_initializer())
 
+def quasi_randomness(A):
+    assert np.ndim(A) == 2
+    k, n = A.shape
+    K = np.matmul(A, A.transpose())
+    qr = ((k*n) ** 2) * np.sum(np.square(K)) - (np.sum(A) ** 4)
+    return qr / ((k*n) ** 4)
+ 
 def quasi_dimension(A, calc_eigs=True):
     assert A.ndim == 2
     A = A - np.mean(A, axis=0, keepdims=True)
@@ -176,7 +201,7 @@ heldout_xs = X_train[:HELDOUT_SIZE]
 #         qds.append(quasi_dimension(a))
 #     return qds
 
-def get_qds(Xs):
+def get_qds(Xs, calc_qr=False):
     global curr_act
     # calculate activations
     act_batches = []
@@ -197,7 +222,11 @@ def get_qds(Xs):
     # compute qds
     qds = []
     for a in full_activations:
-        qds.append(quasi_dimension(a))
+        if calc_qr:
+            qd = quasi_randomness(a)
+        else:
+            qd = quasi_dimension(a)
+        qds.append(qd)
     return qds
 
 def evaluate(Xs, ys, BATCH_SIZE):
@@ -257,8 +286,8 @@ for iteration in xrange(ITERS+1):
     
     # monitor qds on the training data batch
     if iteration % FREQUENCY == 0:
-        qds = get_qds(heldout_xs)
-        qds2 = get_qds(X_devel[:HELDOUT_SIZE])
+        qds = get_qds(heldout_xs, calc_qr=True)
+        qds2 = get_qds(X_devel[:HELDOUT_SIZE], calc_qr=True)
         print qds
         print qds2
                        

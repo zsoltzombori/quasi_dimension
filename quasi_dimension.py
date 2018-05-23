@@ -16,6 +16,28 @@ def one_to_zero(size):
             A[i][j] = 1.0
     return A
 
+def one_hot(size):
+    A = np.zeros((size,size))
+    for i in range(size):
+        A[i][i] = 1.0
+    return A
+
+# check qd for a set of n unit vectors
+if True:
+    for size in (10, 50, 100, 200, 500, 1000, 2000, 5000):
+        A = one_hot(size)
+        qd = quasi_dimension(A)
+        print "Size: {}, qd: {}".format(size, qd)
+
+# Size: 10, qd: 10.0
+# Size: 50, qd: 50.0
+# Size: 100, qd: 100.0
+# Size: 200, qd: 200.0
+# Size: 500, qd: 500.0
+# Size: 1000, qd: 1000.0
+# Size: 2000, qd: 2000.0
+# Size: 5000, qd: 5000.0
+
 # check qd for an inherently 1 dim dataset for various sizes
 if False:
     for size in (10, 50, 100, 200, 500, 1000, 2000, 5000):
