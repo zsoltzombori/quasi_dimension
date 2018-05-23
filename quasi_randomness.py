@@ -2,8 +2,20 @@ import numpy as np
 from scipy.linalg import logm, expm
 from keras.datasets import mnist, fashion_mnist
 
+def normalize(A):
+    assert np.ndim(A) == 2
+    # batch normalization
+    # means = np.mean(A, axis=0, keepdims=True)
+    # variances = np.var(A, axis=0, keepdims=True)
+    # A = (A-means) / np.sqrt(variances + 1e-16)
+    mean = np.mean(A)
+    variance = np.var(A)
+    A = (A-mean) / np.sqrt(variance + 1e-16)
+    return A
+
 def quasi_randomness(A):
     assert np.ndim(A) == 2
+    A = normalize(A)
     k, n = A.shape
     K = np.matmul(A, A.transpose())
     qr = ((k*n) ** 2) * np.sum(np.square(K)) - (np.sum(A) ** 4)
@@ -19,11 +31,12 @@ def one_to_zero(size):
 def one_hot(size):
     A = np.zeros((size,size))
     for i in range(size):
-        A[i][i] = 1.0
+        A[i][i] = 1
     return A
 
 # check qr for a set of n unit vectors
-if False:
+if True:
+    print "\nCheck qr for a set of n unit vectors"
     for size in (10, 50, 100, 200, 500, 1000, 2000, 5000):
         A = one_hot(size)
         qr = quasi_randomness(A)
@@ -49,7 +62,8 @@ if False:
 # Size: 5000, qr: 7.9984e-12
 
 # check qr for a set of 2*n unit vectors
-if False:
+if True:
+    print "\ncheck qr for a set of 2*n unit vectors"
     for size in (10, 50, 100, 200, 500, 1000, 2000, 5000):
         A = one_hot(size)
         B = np.concatenate([A, -1 * A], axis=0)
@@ -60,6 +74,7 @@ if False:
 
 # check qr for gaussian distribution
 if True:
+    print "\ncheck qr for gaussian distribution"
     dim = 100
     shift = np.random.normal(size=(1, dim))
     for size in (10, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000):
@@ -79,9 +94,9 @@ if True:
 # Size: 10000, qr: 1.00999040846e-06
 # Size: 20000, qr: 1.00487604722e-06
 
-xxx
 # check qr for an inherently 1 dim dataset for various sizes
 if True:
+    print "\ncheck qr for an inherently 1 dim dataset for various sizes"
     for size in (10, 50, 100, 200, 500, 1000, 2000, 5000):
         A = one_to_zero(size)
         qr = quasi_randomness(A)
@@ -98,6 +113,7 @@ if True:
 
 # check how qr can be approximated using a subset of the data
 if True:
+    print "\ncheck how qr can be approximated using a subset of the data"
     size = 200
     A = one_to_zero(size)
     for subset in (10, 30, 50, 100, 200):
@@ -119,6 +135,7 @@ if True:
 
 # check qr on mnist
 if True:
+    print "\ncheck qr on mnist"
     (X_train, y_train), (X_test, y_test) = mnist.load_data()
     X_train = X_train.astype('float32')
     X_train /= 255
@@ -142,6 +159,7 @@ if True:
 
 # check qr on fashion_mnist
 if True:
+    print "\ncheck qr on fashion_mnist"
     (X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
     X_train = X_train.astype('float32')
     X_train /= 255

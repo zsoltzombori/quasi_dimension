@@ -119,6 +119,11 @@ if COV_WEIGHT > 0: # push the off diagonal elements of the featurewise correlati
 
 def quasi_randomness_tf(A):
     assert len(A.shape) == 2
+
+    # zero mean and unit variance for the whole matrix
+    mean, variance = tf.nn.moments(A, axes=[0,1])
+    A = (A-mean) / tf.sqrt(variance + 1e-16)
+
     k, n = A.shape
     k = int(k)
     n = int(n)
@@ -161,6 +166,12 @@ session.run(tf.local_variables_initializer())
 
 def quasi_randomness(A):
     assert np.ndim(A) == 2
+
+    # zero mean and unit variance for the whole matrix
+    mean = np.mean(A)
+    variance = np.var(A)
+    A = (A-mean) / np.sqrt(variance + 1e-16)
+
     k, n = A.shape
     K = np.matmul(A, A.transpose())
     qr = ((k*n) ** 2) * np.sum(np.square(K)) - (np.sum(A) ** 4)
